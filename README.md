@@ -1,6 +1,6 @@
-# 🎨 Pixora – Pixel Art Creator
+# 🎨 Pixelhu – Pixel Art Creator
 
-Pixora is a simple and fun **Android pixel art app** that lets you draw, paint, and save your own pixel masterpieces.  
+Pixelhu is a simple and fun **Android pixel art app** that lets you draw, paint, and save your own pixel masterpieces.  
 Built as an MVP (Minimum Viable Product), it focuses on creativity and simplicity — no server required.
 
 ---
@@ -59,7 +59,7 @@ When the user taps on a pixel:
 ## 💡 Inspiration
 
 Pixel art has a special charm — small canvases with big creativity.  
-Pixora aims to bring that magic to your phone, making it easy and fun to create retro-style art anytime.
+Pixelhu aims to bring that magic to your phone, making it easy and fun to create retro-style art anytime.
 
 ---
 

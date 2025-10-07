@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:pixelhu/pages/about_page.dart';
+import 'package:pixelhu/pages/grid_size_page.dart';
 import 'package:pixelhu/widgets/menu_button.dart';
 
 class HomePage extends StatelessWidget {
@@ -18,8 +19,14 @@ class HomePage extends StatelessWidget {
             MenuButton(
               Name: "New Project",
               TextColor: Colors.purple,
-              Tapped: () {},
+              Tapped: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GridSizePage()),
+                );
+              },
             ),
+
             MenuButton(
               Name: "My Gallary",
               TextColor: const Color.fromARGB(255, 103, 39, 176),

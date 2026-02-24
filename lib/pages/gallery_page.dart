@@ -4,10 +4,6 @@ import '../services/artwork_service.dart';
 import '../pages/pixel_draw_page.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
-import 'package:flutter/rendering.dart';
 import 'package:gal/gal.dart';
 
 class GalleryPage extends StatefulWidget {
@@ -526,89 +522,90 @@ class _GalleryPageState extends State<GalleryPage> {
 
   Future<void> _exportArtworkAsPng(Artwork artwork) async {
     try {
+      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
           return AlertDialog(
-            content: Row(
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: const Text(
-                    "Exporting artwork...",
-                    overflow: TextOverflow.ellipsis,
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Text(
+                      "Exporting artwork as PNG...",
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 14),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
       );
 
-      await Future.delayed(const Duration(milliseconds: 100));
-
+      // Create a canvas-based image to ensure perfect pixel connection
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final Canvas canvas = Canvas(recorder);
 
-      final double canvasSize = 500.0;
-      final double cellSize = canvasSize / artwork.gridSize;
+      // Calculate the size for each pixel in the exported image
+      // Using larger size to ensure crisp pixels without anti-aliasing
+      const int exportPixelSize =
+          16; // Size of each pixel in the exported image
+      final int imageSize = artwork.gridSize * exportPixelSize;
 
-      final Paint bgPaint = Paint()
-        ..color = _getColorFromInt(artwork.backgroundColorValue);
-      canvas.drawRect(Rect.fromLTWH(0, 0, canvasSize, canvasSize), bgPaint);
+      // Disable anti-aliasing to ensure sharp pixel edges
+      final Paint paint = Paint()..isAntiAlias = false;
 
-      for (int i = 0; i < artwork.pixels.length; i++) {
-        int row = i ~/ artwork.gridSize;
-        int col = i % artwork.gridSize;
+      // Draw background
+      paint.color = _getColorFromInt(artwork.backgroundColorValue);
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, imageSize.toDouble(), imageSize.toDouble()),
+        paint,
+      );
 
-        final Color pixelColor = _getColorFromInt(artwork.pixels[i]);
-        if (pixelColor.alpha > 0) {
-          final Paint paint = Paint()..color = pixelColor;
-          final Rect rect = Rect.fromLTWH(
-            col * cellSize,
-            row * cellSize,
-            cellSize,
-            cellSize,
-          );
-          canvas.drawRect(rect, paint);
+      // Draw each pixel directly onto the canvas
+      for (int y = 0; y < artwork.gridSize; y++) {
+        for (int x = 0; x < artwork.gridSize; x++) {
+          final int index = y * artwork.gridSize + x;
+          if (index < artwork.pixels.length) {
+            final Rect rect = Rect.fromLTWH(
+              (x * exportPixelSize).toDouble(),
+              (y * exportPixelSize).toDouble(),
+              exportPixelSize.toDouble(),
+              exportPixelSize.toDouble(),
+            );
+            paint.color = _getColorFromInt(artwork.pixels[index]);
+            canvas.drawRect(rect, paint);
+          }
         }
       }
 
-      final Paint gridPaint = Paint()
-        ..color = Colors.black12
-        ..strokeWidth = 0.5;
-
-      for (int i = 0; i <= artwork.gridSize; i++) {
-        canvas.drawLine(
-          Offset(i * cellSize, 0),
-          Offset(i * cellSize, canvasSize),
-          gridPaint,
-        );
-        canvas.drawLine(
-          Offset(0, i * cellSize),
-          Offset(canvasSize, i * cellSize),
-          gridPaint,
-        );
-      }
-
       final ui.Picture picture = recorder.endRecording();
-      final ui.Image image = await picture.toImage(
-        canvasSize.toInt(),
-        canvasSize.toInt(),
-      );
+      final ui.Image image = await picture.toImage(imageSize, imageSize);
 
       final ByteData? byteData = await image.toByteData(
         format: ui.ImageByteFormat.png,
       );
+
       if (byteData == null) {
-        throw Exception("Failed to convert image to PNG");
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to convert image to bytes"),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
       }
 
       final Uint8List pngBytes = byteData.buffer.asUint8List();
 
-      // Save to gallery using gal package
       await Gal.putImageBytes(
         pngBytes,
         name:
@@ -619,14 +616,15 @@ class _GalleryPageState extends State<GalleryPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            "Artwork exported as PNG successfully! Check your gallery.",
-          ),
+          content: Text("Artwork exported successfully! Check your gallery."),
           backgroundColor: Color(0xFF007AFF),
         ),
       );
     } catch (e) {
-      Navigator.of(context).pop();
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error exporting artwork: $e"),

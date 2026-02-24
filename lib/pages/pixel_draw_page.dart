@@ -4,10 +4,6 @@ import '../models/artwork.dart';
 import '../services/artwork_service.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
-import 'package:flutter/rendering.dart';
 import 'package:gal/gal.dart';
 
 class PixelDrawPage extends StatefulWidget {
@@ -153,12 +149,6 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
   void _toggleEraser() {
     setState(() {
       isErasing = !isErasing;
-    });
-  }
-
-  void _toggleGridLines() {
-    setState(() {
-      _showGridLines = !_showGridLines;
     });
   }
 
@@ -454,7 +444,7 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
         children: [
           Expanded(
             child: Container(
-              margin: const EdgeInsets.all(20),
+              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 50),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -468,41 +458,44 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
                 ],
               ),
               child: Center(
-                child: RepaintBoundary(
-                  key: gridKey,
-                  child: InteractiveViewer(
-                    minScale: 0.5,
-                    maxScale: 5.0,
-                    scaleEnabled: true,
-                    panEnabled: true,
-                    child: Transform.scale(
-                      scale: _zoom,
-                      child: SizedBox(
-                        width: pixelSize * gridCount,
-                        height: pixelSize * gridCount,
-                        child: GridView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: gridCount,
-                              ),
-                          itemCount: pixels.length,
-                          itemBuilder: (context, index) {
-                            return GestureDetector(
-                              onTap: () {
-                                _handleDraw(index);
-                              },
-                              onPanUpdate: (_) {
-                                _handleDraw(index);
-                              },
-                              child: Container(
-                                color: pixels[index],
-                                margin: _showGridLines
-                                    ? const EdgeInsets.all(0.5)
-                                    : EdgeInsets.zero,
-                              ),
-                            );
-                          },
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: RepaintBoundary(
+                    key: gridKey,
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 5.0,
+                      scaleEnabled: true,
+                      panEnabled: true,
+                      child: Transform.scale(
+                        scale: _zoom,
+                        child: SizedBox(
+                          width: pixelSize * gridCount,
+                          height: pixelSize * gridCount,
+                          child: GridView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: gridCount,
+                                ),
+                            itemCount: pixels.length,
+                            itemBuilder: (context, index) {
+                              return GestureDetector(
+                                onTap: () {
+                                  _handleDraw(index);
+                                },
+                                onPanUpdate: (_) {
+                                  _handleDraw(index);
+                                },
+                                child: Container(
+                                  color: pixels[index],
+                                  margin: _showGridLines
+                                      ? const EdgeInsets.all(0.5)
+                                      : EdgeInsets.zero,
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),

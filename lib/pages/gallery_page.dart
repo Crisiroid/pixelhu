@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/rendering.dart';
+import 'package:gal/gal.dart';
 
 class GalleryPage extends StatefulWidget {
   const GalleryPage({super.key});
@@ -534,7 +535,12 @@ class _GalleryPageState extends State<GalleryPage> {
               children: [
                 const CircularProgressIndicator(),
                 const SizedBox(width: 20),
-                Text("Exporting artwork..."),
+                Expanded(
+                  child: const Text(
+                    "Exporting artwork...",
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           );
@@ -602,28 +608,28 @@ class _GalleryPageState extends State<GalleryPage> {
 
       final Uint8List pngBytes = byteData.buffer.asUint8List();
 
-      Directory appDir = await getApplicationDocumentsDirectory();
-      String fileName =
-          'pixel_art_${artwork.title}_${DateTime.now().millisecondsSinceEpoch}.png';
-      String filePath = path.join(appDir.path, fileName);
-
-      await File(filePath).writeAsBytes(pngBytes);
+      // Save to gallery using gal package
+      await Gal.putImageBytes(
+        pngBytes,
+        name:
+            'pixel_art_${artwork.title}_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
 
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text(
-            "Artwork exported as PNG successfully! File saved to: \$fileName",
+            "Artwork exported as PNG successfully! Check your gallery.",
           ),
-          backgroundColor: const Color(0xFF007AFF),
+          backgroundColor: Color(0xFF007AFF),
         ),
       );
     } catch (e) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error exporting artwork: \$e"),
+          content: Text("Error exporting artwork: $e"),
           backgroundColor: Colors.red,
         ),
       );

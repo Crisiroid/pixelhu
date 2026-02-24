@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/rendering.dart';
+import 'package:gal/gal.dart';
 
 class PixelDrawPage extends StatefulWidget {
   final int gridSize;
@@ -277,12 +278,22 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
         barrierDismissible: false,
         builder: (BuildContext context) {
           return AlertDialog(
-            content: Row(
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(width: 20),
-                Text("Exporting artwork as PNG..."),
-              ],
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Text(
+                      "Exporting artwork as PNG...",
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -290,30 +301,54 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
 
       await Future.delayed(const Duration(milliseconds: 100));
 
-      RenderRepaintBoundary boundary =
-          gridKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      await WidgetsBinding.instance.endOfFrame;
+
+      RenderRepaintBoundary? boundary =
+          gridKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+
+      if (boundary == null) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Failed to capture image - render boundary not found",
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      ui.Image image = await boundary.toImage(pixelRatio: 4.0);
 
       ByteData? byteData = await image.toByteData(
         format: ui.ImageByteFormat.png,
       );
-      Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-      Directory appDir = await getApplicationDocumentsDirectory();
-      String fileName =
-          'pixel_art_${DateTime.now().millisecondsSinceEpoch}.png';
-      String filePath = path.join(appDir.path, fileName);
+      if (byteData == null) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to convert image to bytes"),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
-      await File(filePath).writeAsBytes(pngBytes);
+      Uint8List pngBytes = byteData.buffer.asUint8List();
+
+      await Gal.putImageBytes(
+        pngBytes,
+        name: 'pixel_art_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
 
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Artwork exported as PNG successfully! File saved to: \$fileName",
-          ),
-          backgroundColor: const Color(0xFF007AFF),
+        const SnackBar(
+          content: Text("Artwork exported successfully! Check your gallery."),
+          backgroundColor: Color(0xFF007AFF),
         ),
       );
     } catch (e) {
@@ -323,7 +358,7 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error exporting artwork: \$e"),
+          content: Text("Error exporting artwork: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -421,36 +456,40 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
                 ],
               ),
               child: Center(
-                child: InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 5.0,
-                  scaleEnabled: true,
-                  panEnabled: true,
-                  child: Transform.scale(
-                    scale: _zoom,
-                    child: SizedBox(
-                      width: pixelSize * gridCount,
-                      height: pixelSize * gridCount,
-                      child: GridView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: gridCount,
+                child: RepaintBoundary(
+                  key: gridKey,
+                  child: InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 5.0,
+                    scaleEnabled: true,
+                    panEnabled: true,
+                    child: Transform.scale(
+                      scale: _zoom,
+                      child: SizedBox(
+                        width: pixelSize * gridCount,
+                        height: pixelSize * gridCount,
+                        child: GridView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: gridCount,
+                              ),
+                          itemCount: pixels.length,
+                          itemBuilder: (context, index) {
+                            return GestureDetector(
+                              onTap: () {
+                                _handleDraw(index);
+                              },
+                              onPanUpdate: (_) {
+                                _handleDraw(index);
+                              },
+                              child: Container(
+                                color: pixels[index],
+                                margin: const EdgeInsets.all(0.5),
+                              ),
+                            );
+                          },
                         ),
-                        itemCount: pixels.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              _handleDraw(index);
-                            },
-                            onPanUpdate: (_) {
-                              _handleDraw(index);
-                            },
-                            child: Container(
-                              color: pixels[index],
-                              margin: const EdgeInsets.all(0.5),
-                            ),
-                          );
-                        },
                       ),
                     ),
                   ),

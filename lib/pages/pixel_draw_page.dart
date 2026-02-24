@@ -273,6 +273,7 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
 
   Future<void> _exportArtworkAsPng() async {
     try {
+      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -299,29 +300,40 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
         },
       );
 
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Create a canvas-based image to ensure perfect pixel connection
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
 
-      await WidgetsBinding.instance.endOfFrame;
+      // Calculate the size for each pixel in the exported image
+      // Using larger size to ensure crisp pixels without anti-aliasing
+      const int exportPixelSize =
+          16; // Size of each pixel in the exported image
+      final int imageSize = widget.gridSize * exportPixelSize;
 
-      RenderRepaintBoundary? boundary =
-          gridKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      // Disable anti-aliasing to ensure sharp pixel edges
+      final Paint paint = Paint()..isAntiAlias = false;
 
-      if (boundary == null) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Failed to capture image - render boundary not found",
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
+      // Draw each pixel directly onto the canvas
+      for (int y = 0; y < widget.gridSize; y++) {
+        for (int x = 0; x < widget.gridSize; x++) {
+          final int index = y * widget.gridSize + x;
+          if (index < pixels.length) {
+            final Rect rect = Rect.fromLTWH(
+              x * exportPixelSize.toDouble(),
+              y * exportPixelSize.toDouble(),
+              exportPixelSize.toDouble(),
+              exportPixelSize.toDouble(),
+            );
+            paint.color = pixels[index];
+            canvas.drawRect(rect, paint);
+          }
+        }
       }
 
-      ui.Image image = await boundary.toImage(pixelRatio: 4.0);
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image image = await picture.toImage(imageSize, imageSize);
 
-      ByteData? byteData = await image.toByteData(
+      final ByteData? byteData = await image.toByteData(
         format: ui.ImageByteFormat.png,
       );
 
@@ -336,7 +348,7 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
         return;
       }
 
-      Uint8List pngBytes = byteData.buffer.asUint8List();
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
 
       await Gal.putImageBytes(
         pngBytes,
@@ -485,7 +497,9 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
                               },
                               child: Container(
                                 color: pixels[index],
-                                margin: const EdgeInsets.all(0.5),
+                                margin: _showGridLines
+                                    ? const EdgeInsets.all(0.5)
+                                    : EdgeInsets.zero,
                               ),
                             );
                           },

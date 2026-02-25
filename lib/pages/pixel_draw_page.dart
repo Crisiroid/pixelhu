@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../models/artwork.dart';
 import '../services/artwork_service.dart';
+import '../services/admob_service.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:gal/gal.dart';
@@ -262,6 +263,15 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
   }
 
   Future<void> _exportArtworkAsPng() async {
+    // Show interstitial ad before exporting
+    await AdMobService().showInterstitialAdWithCallback(
+      onAdDismissed: () async {
+        await _performExport();
+      },
+    );
+  }
+
+  Future<void> _performExport() async {
     try {
       // Show loading dialog
       showDialog(

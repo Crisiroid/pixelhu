@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:pixelhu/pages/home_page.dart';
+import 'package:pixelhu/services/admob_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Google Mobile Ads SDK
+  await AdMobService.initialize();
+
+  // Preload an interstitial ad
+  await AdMobService().loadInterstitialAd();
+
   runApp(const MyApp());
 }
 

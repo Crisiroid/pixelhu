@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/artwork.dart';
 import '../services/artwork_service.dart';
+import '../services/admob_service.dart';
 import '../pages/pixel_draw_page.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -480,17 +481,23 @@ class _GalleryPageState extends State<GalleryPage> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              Navigator.of(context).pop();
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => PixelDrawPage(
-                                    gridSize: artwork.gridSize,
-                                    artworkToEdit: artwork,
-                                  ),
-                                ),
-                              );
+                            onPressed: () async {
+                              // Show interstitial ad before editing
+                              await AdMobService()
+                                  .showInterstitialAdWithCallback(
+                                    onAdDismissed: () {
+                                      Navigator.of(context).pop();
+                                      Navigator.of(context).pop();
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => PixelDrawPage(
+                                            gridSize: artwork.gridSize,
+                                            artworkToEdit: artwork,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF007AFF),
@@ -521,6 +528,15 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   Future<void> _exportArtworkAsPng(Artwork artwork) async {
+    // Show interstitial ad before exporting
+    await AdMobService().showInterstitialAdWithCallback(
+      onAdDismissed: () async {
+        await _performExport(artwork);
+      },
+    );
+  }
+
+  Future<void> _performExport(Artwork artwork) async {
     try {
       // Show loading dialog
       showDialog(

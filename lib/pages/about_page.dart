@@ -20,7 +20,7 @@ class AboutPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(

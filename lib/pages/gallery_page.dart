@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../models/artwork.dart';
 import '../services/artwork_service.dart';
 import '../services/admob_service.dart';
@@ -19,10 +20,32 @@ class _GalleryPageState extends State<GalleryPage> {
   List<Artwork> _artworks = [];
   bool _isLoading = true;
 
+  NativeAd? _nativeAd;
+  bool _isNativeAdReady = false;
+
   @override
   void initState() {
     super.initState();
     _loadArtworks();
+    _loadNativeAd();
+  }
+
+  @override
+  void dispose() {
+    _nativeAd?.dispose();
+    super.dispose();
+  }
+
+  void _loadNativeAd() {
+    final nativeAd = AdMobService().createNativeAd();
+    if (nativeAd != null) {
+      _nativeAd = nativeAd;
+      nativeAd.load().then((_) {
+        setState(() {
+          _isNativeAdReady = true;
+        });
+      });
+    }
   }
 
   Future<void> _loadArtworks() async {
@@ -134,30 +157,62 @@ class _GalleryPageState extends State<GalleryPage> {
         ],
       ),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _artworks.isEmpty
-            ? _buildEmptyState()
-            : RefreshIndicator(
-                onRefresh: _loadArtworks,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.8,
-                        ),
-                    itemCount: _artworks.length,
-                    itemBuilder: (context, index) {
-                      final artwork = _artworks[index];
-                      return _buildArtworkCard(artwork, index);
-                    },
-                  ),
+        child: Column(
+          children: [
+            // Native Ad at the top of gallery
+            if (_isNativeAdReady && _nativeAd != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                constraints: const BoxConstraints(
+                  minHeight: 250,
+                  maxHeight: 350,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: AdWidget(ad: _nativeAd!),
                 ),
               ),
+
+            // Gallery content
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _artworks.isEmpty
+                  ? _buildEmptyState()
+                  : RefreshIndicator(
+                      onRefresh: _loadArtworks,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 0.8,
+                              ),
+                          itemCount: _artworks.length,
+                          itemBuilder: (context, index) {
+                            final artwork = _artworks[index];
+                            return _buildArtworkCard(artwork, index);
+                          },
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

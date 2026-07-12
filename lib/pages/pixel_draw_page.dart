@@ -155,6 +155,12 @@ class _PixelDrawPageState extends State<PixelDrawPage> {
 
   Future<void> _saveArtwork() async {
     try {
+      // Show rewarded ad before saving
+      bool earnedReward = await AdMobService().showRewardedAd();
+
+      // Proceed with save regardless of reward status (graceful degradation)
+      // You could add additional logic here to only save if earnedReward is true
+
       List<int> pixelValues = pixels.map((color) => color.value).toList();
 
       String? title = await _promptForTitle(

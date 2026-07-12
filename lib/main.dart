@@ -8,8 +8,9 @@ void main() async {
   // Initialize Google Mobile Ads SDK
   await AdMobService.initialize();
 
-  // Preload an interstitial ad
+  // Preload ads
   await AdMobService().loadInterstitialAd();
+  await AdMobService().loadRewardedAd();
 
   runApp(const MyApp());
 }
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PixelHu',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,

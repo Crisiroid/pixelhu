@@ -1,0 +1,15 @@
+# Google Play Publishing Files
+
+## Files generated for publishing
+*.jks
+*.keystore
+key.properties
+release/
+*.aab
+*.apk
+
+# IMPORTANT SECURITY NOTES
+# 1. NEVER commit keystore files (.jks, .keystore) to version control
+# 2. NEVER commit key.properties with real passwords
+# 3. Keep your keystore file in a secure backup location
+# 4. If you lose your keystore, you CANNOT update your app on Play Store

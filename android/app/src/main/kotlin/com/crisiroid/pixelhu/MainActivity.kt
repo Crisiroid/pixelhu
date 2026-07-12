@@ -1,4 +1,4 @@
-package com.example.pixelhu
+package com.crisiroid.pixelhu
 
 import io.flutter.embedding.android.FlutterActivity
 

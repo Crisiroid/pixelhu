@@ -1,11 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
-    <!-- For Android 13 and above -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Storage permissions for saving artwork to gallery -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32" />
+    <!-- For Android 13+ (API 33+), Media Store API handles gallery access -->
+    <!-- No additional permissions needed for Android 13+ when using gal package -->
     <application
         android:label="pixelhu"
         android:name="${applicationName}"
@@ -37,10 +40,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- Google AdMob App ID - Replace with your actual App ID for production -->
+        <!-- Google AdMob App ID -->
+        <!-- For production: pixelhuca-app-pub-1390593909444402~8075232456 -->
+        <!-- Test ID is currently in use -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-3940256099942544~3347511341"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
